@@ -1,1685 +1,1008 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CareerConnect AI - Smart Job Matching Platform</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    
-    <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --info: #4895ef;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --light-gray: #e9ecef;
-            --border-radius: 8px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
-
-        .dark-mode {
-            --primary: #5a6ff0;
-            --secondary: #4f47d4;
-            --light: #121212;
-            --dark: #f8f9fa;
-            --gray: #a0a0a0;
-            --light-gray: #2d2d2d;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--light);
-            color: var(--dark);
-            transition: var(--transition);
-            line-height: 1.6;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-
-        /* Header Styles */
-        header {
-            background-color: var(--light);
-            box-shadow: var(--box-shadow);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            transition: var(--transition);
-        }
-
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 0;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-        }
-
-        .logo i {
-            margin-right: 10px;
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-        }
-
-        .nav-links li {
-            margin-left: 1.5rem;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            transition: var(--transition);
-            padding: 0.5rem 0;
-            position: relative;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: var(--primary);
-            transition: var(--transition);
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: var(--border-radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--secondary);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background-color: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-outline:hover {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-success {
-            background-color: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background-color: #3ab0d6;
-        }
-
-        .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--dark);
-            cursor: pointer;
-            font-size: 1.2rem;
-            margin-left: 1rem;
-        }
-
-        .mobile-menu {
-            display: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: 4rem 0;
-            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
-            color: white;
-            text-align: center;
-            border-radius: 0 0 30px 30px;
-            margin-bottom: 2rem;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            max-width: 700px;
-            margin: 0 auto 2rem;
-        }
-
-        .search-box {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 1rem;
-            max-width: 800px;
-            margin: 0 auto;
-            display: flex;
-            box-shadow: var(--box-shadow);
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 0.8rem;
-            border: 1px solid var(--light-gray);
-            border-radius: var(--border-radius) 0 0 var(--border-radius);
-            outline: none;
-        }
-
-        .search-btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 0 1.5rem;
-            border-radius: 0 var(--border-radius) var(--border-radius) 0;
-            cursor: pointer;
-        }
-
-        /* Dashboard Styles */
-        .dashboard {
-            display: none;
-            min-height: 80vh;
-        }
-
-        .dashboard.active {
-            display: block;
-        }
-
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .dashboard-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .stats-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            box-shadow: var(--box-shadow);
-            transition: var(--transition);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-card i {
-            font-size: 2rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .stat-card h3 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-card p {
-            color: var(--gray);
-        }
-
-        .job-listings {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .job-card {
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            box-shadow: var(--box-shadow);
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .job-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .job-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .job-card-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .job-card-company {
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        .job-card-salary {
-            background-color: var(--success);
-            color: white;
-            padding: 0.3rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .job-card-details {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .job-tag {
-            background-color: var(--light-gray);
-            padding: 0.3rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
-
-        .job-card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .job-card-date {
-            font-size: 0.8rem;
-            color: var(--gray);
-        }
-
-        /* Forms */
-        .form-container {
-            max-width: 600px;
-            margin: 2rem auto;
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 2rem;
-            box-shadow: var(--box-shadow);
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid var(--light-gray);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-
-        .form-control:focus {
-            border-color: var(--primary);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--light-gray);
-            margin-bottom: 1.5rem;
-        }
-
-        .tab {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: var(--transition);
-            border-bottom: 3px solid transparent;
-        }
-
-        .tab.active {
-            color: var(--primary);
-            border-bottom: 3px solid var(--primary);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* AI Features */
-        .ai-feature {
-            background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
-            color: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .ai-feature i {
-            font-size: 2.5rem;
-            margin-right: 1rem;
-        }
-
-        .ai-feature h3 {
-            margin-bottom: 0.5rem;
-        }
-
-        /* Auth Modals */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: white;
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 500px;
-            padding: 2rem;
-            box-shadow: var(--box-shadow);
-            position: relative;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--gray);
-        }
-
-        .modal-title {
-            margin-bottom: 1.5rem;
-            text-align: center;
-            font-size: 1.5rem;
-        }
-
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .auth-tab {
-            flex: 1;
-            text-align: center;
-            padding: 1rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: var(--transition);
-            border-bottom: 3px solid transparent;
-        }
-
-        .auth-tab.active {
-            color: var(--primary);
-            border-bottom: 3px solid var(--primary);
-        }
-
-        .auth-form {
-            display: none;
-        }
-
-        .auth-form.active {
-            display: block;
-        }
-
-        .form-footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: var(--gray);
-        }
-
-        .form-footer a {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-
-        /* Footer */
-        footer {
-            background-color: var(--dark);
-            color: white;
-            padding: 3rem 0 1rem;
-            margin-top: 3rem;
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-column h3 {
-            margin-bottom: 1.5rem;
-            font-size: 1.2rem;
-        }
-
-        .footer-links {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.8rem;
-        }
-
-        .footer-links a {
-            color: #ccc;
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        .copyright {
-            text-align: center;
-            padding-top: 1.5rem;
-            border-top: 1px solid #444;
-            color: #aaa;
-            font-size: 0.9rem;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .nav-links, .auth-buttons {
-                display: none;
-            }
-
-            .mobile-menu {
-                display: block;
-            }
-
-            .hero h1 {
-                font-size: 2.2rem;
-            }
-
-            .search-box {
-                flex-direction: column;
-            }
-
-            .search-input {
-                border-radius: var(--border-radius);
-                margin-bottom: 0.5rem;
-            }
-
-            .search-btn {
-                border-radius: var(--border-radius);
-                padding: 0.8rem;
-            }
-
-            .stats-cards {
-                grid-template-columns: 1fr;
-            }
-
-            .job-listings {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <nav class="navbar">
-                <div class="logo">
-                    <i class="fas fa-brain"></i> CareerConnect AI
-                </div>
-                <ul class="nav-links">
-                    <li><a href="#" class="nav-link active" data-target="home">Home</a></li>
-                    <li><a href="#" class="nav-link" data-target="job-seeker-dashboard">Job Seeker</a></li>
-                    <li><a href="#" class="nav-link" data-target="employer-dashboard">Employer</a></li>
-                    <li><a href="#" class="nav-link" data-target="admin-dashboard">Admin</a></li>
-                    <li><a href="#">Blog</a></li>
-                    <li><a href="#">Contact</a></li>
-                </ul>
-                <div class="auth-buttons" id="authButtons">
-                    <button class="btn btn-outline" id="loginBtn">Login</button>
-                    <button class="btn btn-primary" id="signupBtn">Sign Up</button>
-                    <button class="theme-toggle" id="themeToggle">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                </div>
-                <div class="user-info" id="userInfo" style="display: none;">
-                    <div class="user-avatar" id="userAvatar">JD</div>
-                    <div>
-                        <div id="userName">John Doe</div>
-                        <div style="font-size: 0.8rem; color: var(--gray);" id="userRole">Job Seeker</div>
-                    </div>
-                    <button class="btn btn-outline" id="logoutBtn" style="margin-left: 1rem;">Logout</button>
-                </div>
-                <div class="mobile-menu">
-                    <i class="fas fa-bars"></i>
-                </div>
-            </nav>
+<!-- Auth Modal -->
+<div class="modal" id="authModal">
+    <div class="modal-content">
+        <button class="modal-close" id="closeModal">&times;</button>
+        <h2 class="modal-title">CareerConnect AI</h2>
+        
+        <div class="auth-tabs">
+            <div class="auth-tab active" data-auth-tab="login">Login</div>
+            <div class="auth-tab" data-auth-tab="signup">Sign Up</div>
         </div>
-    </header>
-
-    <!-- Auth Modal -->
-    <div class="modal" id="authModal">
-        <div class="modal-content">
-            <button class="modal-close" id="closeModal">&times;</button>
-            <h2 class="modal-title">CareerConnect AI</h2>
-            
-            <div class="auth-tabs">
-                <div class="auth-tab active" data-auth-tab="login">Login</div>
-                <div class="auth-tab" data-auth-tab="signup">Sign Up</div>
+        
+        <!-- Login Form -->
+        <form class="auth-form active" id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="loginEmail" required>
             </div>
-            
-            <!-- Login Form -->
-            <form class="auth-form active" id="loginForm">
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="loginEmail" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" id="loginPassword" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">User Type</label>
-                    <select class="form-control" id="loginUserType">
-                        <option value="jobseeker">Job Seeker</option>
-                        <option value="employer">Employer</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
-                <div class="form-footer">
-                    <a href="#" id="forgotPassword">Forgot your password?</a>
-                </div>
-                <div id="loginMessage" style="margin-top: 1rem; text-align: center;"></div>
-            </form>
-            
-            <!-- Signup Form -->
-            <form class="auth-form" id="signupForm">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" class="form-control" id="signupName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" id="signupEmail" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-control" id="signupPassword" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password" class="form-control" id="signupConfirmPassword" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">User Type</label>
-                    <select class="form-control" id="signupUserType">
-                        <option value="jobseeker">Job Seeker</option>
-                        <option value="employer">Employer</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
-                <div class="form-footer">
-                    By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
-                </div>
-                <div id="signupMessage" style="margin-top: 1rem; text-align: center;"></div>
-            </form>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="loginPassword" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">User Type</label>
+                <select class="form-control" id="loginUserType">
+                    <option value="jobseeker">Job Seeker</option>
+                    <option value="employer">Employer</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            <div class="form-footer">
+                <a href="#" id="forgotPassword">Forgot your password?</a>
+            </div>
+            <div id="loginMessage" style="margin-top: 1rem; text-align: center;"></div>
+        </form>
+        
+        <!-- Signup Form -->
+        <form class="auth-form" id="signupForm">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" id="signupName" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="signupEmail" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="signupPassword" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="signupConfirmPassword" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">User Type</label>
+                <select class="form-control" id="signupUserType">
+                    <option value="jobseeker">Job Seeker</option>
+                    <option value="employer">Employer</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+            <div class="form-footer">
+                By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+            </div>
+            <div id="signupMessage" style="margin-top: 1rem; text-align: center;"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Home/Landing Page -->
+<section id="home" class="dashboard active">
+    <div class="hero">
+        <div class="container">
+            <h1>Find Your Dream Job with AI</h1>
+            <p>CareerConnect AI matches talented job seekers with top employers using advanced artificial intelligence.</p>
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Job title, keywords, or company">
+                <input type="text" class="search-input" placeholder="City, state, or remote">
+                <button class="search-btn"><i class="fas fa-search"></i> Search Jobs</button>
+            </div>
         </div>
     </div>
 
-    <!-- Home/Landing Page -->
-    <section id="home" class="dashboard active">
-        <div class="hero">
-            <div class="container">
-                <h1>Find Your Dream Job with AI</h1>
-                <p>CareerConnect AI matches talented job seekers with top employers using advanced artificial intelligence.</p>
-                <div class="search-box">
-                    <input type="text" class="search-input" placeholder="Job title, keywords, or company">
-                    <input type="text" class="search-input" placeholder="City, state, or remote">
-                    <button class="search-btn"><i class="fas fa-search"></i> Search Jobs</button>
-                </div>
+    <div class="container">
+        <div class="stats-cards">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>50,000+</h3>
+                <p>Active Job Seekers</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-building"></i>
+                <h3>5,000+</h3>
+                <p>Companies Hiring</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-briefcase"></i>
+                <h3>25,000+</h3>
+                <p>Job Openings</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-handshake"></i>
+                <h3>10,000+</h3>
+                <p>Successful Matches</p>
             </div>
         </div>
 
-        <div class="container">
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <i class="fas fa-users"></i>
-                    <h3>50,000+</h3>
-                    <p>Active Job Seekers</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-building"></i>
-                    <h3>5,000+</h3>
-                    <p>Companies Hiring</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-briefcase"></i>
-                    <h3>25,000+</h3>
-                    <p>Job Openings</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-handshake"></i>
-                    <h3>10,000+</h3>
-                    <p>Successful Matches</p>
-                </div>
+        <div class="ai-feature">
+            <i class="fas fa-robot"></i>
+            <div>
+                <h3>AI-Powered Job Matching</h3>
+                <p>Our advanced AI analyzes your skills, experience, and preferences to recommend the perfect job opportunities.</p>
             </div>
+        </div>
 
-            <div class="ai-feature">
-                <i class="fas fa-robot"></i>
-                <div>
-                    <h3>AI-Powered Job Matching</h3>
-                    <p>Our advanced AI analyzes your skills, experience, and preferences to recommend the perfect job opportunities.</p>
-                </div>
+        <h2 style="margin-bottom: 1.5rem;">Featured Jobs</h2>
+        <div class="job-listings">
+            <!-- Job cards will be populated by JavaScript -->
+        </div>
+
+        <div style="text-align: center; margin: 3rem 0;">
+            <button class="btn btn-primary">View All Jobs</button>
+        </div>
+    </div>
+</section>
+
+<!-- Job Seeker Dashboard -->
+<section id="job-seeker-dashboard" class="dashboard">
+    <div class="container">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Job Seeker Dashboard</h2>
+            <div>
+                <button class="btn btn-success"><i class="fas fa-upload"></i> Upload Resume</button>
             </div>
+        </div>
 
-            <h2 style="margin-bottom: 1.5rem;">Featured Jobs</h2>
+        <div class="tabs">
+            <div class="tab active" data-tab="recommended">AI Recommended Jobs</div>
+            <div class="tab" data-tab="search">Job Search</div>
+            <div class="tab" data-tab="applications">My Applications</div>
+            <div class="tab" data-tab="profile">My Profile</div>
+        </div>
+
+        <div class="tab-content active" id="recommended">
+            <h3 style="margin-bottom: 1.5rem;">Jobs Matched For You</h3>
             <div class="job-listings">
-                <!-- Job cards will be populated by JavaScript -->
-            </div>
-
-            <div style="text-align: center; margin: 3rem 0;">
-                <button class="btn btn-primary">View All Jobs</button>
+                <!-- AI recommended jobs will be populated by JavaScript -->
             </div>
         </div>
-    </section>
 
-    <!-- Job Seeker Dashboard -->
-    <section id="job-seeker-dashboard" class="dashboard">
-        <div class="container">
-            <div class="dashboard-header">
-                <h2 class="dashboard-title">Job Seeker Dashboard</h2>
-                <div>
-                    <button class="btn btn-success"><i class="fas fa-upload"></i> Upload Resume</button>
-                </div>
+        <div class="tab-content" id="search">
+            <div class="search-box" style="max-width: 100%; margin-bottom: 2rem;">
+                <input type="text" class="search-input" placeholder="Job title, keywords">
+                <input type="text" class="search-input" placeholder="Location">
+                <select class="search-input">
+                    <option value="">Job Type</option>
+                    <option value="full-time">Full Time</option>
+                    <option value="part-time">Part Time</option>
+                    <option value="remote">Remote</option>
+                    <option value="contract">Contract</option>
+                </select>
+                <button class="search-btn"><i class="fas fa-search"></i> Search</button>
             </div>
-
-            <div class="tabs">
-                <div class="tab active" data-tab="recommended">AI Recommended Jobs</div>
-                <div class="tab" data-tab="search">Job Search</div>
-                <div class="tab" data-tab="applications">My Applications</div>
-                <div class="tab" data-tab="profile">My Profile</div>
-            </div>
-
-            <div class="tab-content active" id="recommended">
-                <h3 style="margin-bottom: 1.5rem;">Jobs Matched For You</h3>
-                <div class="job-listings">
-                    <!-- AI recommended jobs will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <div class="tab-content" id="search">
-                <div class="search-box" style="max-width: 100%; margin-bottom: 2rem;">
-                    <input type="text" class="search-input" placeholder="Job title, keywords">
-                    <input type="text" class="search-input" placeholder="Location">
-                    <select class="search-input">
-                        <option value="">Job Type</option>
-                        <option value="full-time">Full Time</option>
-                        <option value="part-time">Part Time</option>
-                        <option value="remote">Remote</option>
-                        <option value="contract">Contract</option>
-                    </select>
-                    <button class="search-btn"><i class="fas fa-search"></i> Search</button>
-                </div>
-                
-                <div class="job-listings">
-                    <!-- Search results will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <div class="tab-content" id="applications">
-                <h3 style="margin-bottom: 1.5rem;">Application History</h3>
-                <div class="job-listings">
-                    <!-- Application history will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <div class="tab-content" id="profile">
-                <div class="form-container">
-                    <h3 style="margin-bottom: 1.5rem; text-align: center;">My Profile</h3>
-                    <div class="form-group">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" value="John Doe">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" value="john.doe@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Professional Title</label>
-                        <input type="text" class="form-control" value="Senior Software Engineer">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Skills</label>
-                        <input type="text" class="form-control" value="JavaScript, React, Node.js, Python">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Resume</label>
-                        <div style="display: flex; gap: 1rem;">
-                            <input type="file" class="form-control">
-                            <button class="btn btn-success">Parse with AI</button>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" style="width: 100%;">Update Profile</button>
-                </div>
+            
+            <div class="job-listings">
+                <!-- Search results will be populated by JavaScript -->
             </div>
         </div>
-    </section>
 
-    <!-- Employer Dashboard -->
-    <section id="employer-dashboard" class="dashboard">
-        <div class="container">
-            <div class="dashboard-header">
-                <h2 class="dashboard-title">Employer Dashboard</h2>
-                <div>
-                    <button class="btn btn-success"><i class="fas fa-plus"></i> Post a Job</button>
-                </div>
-            </div>
-
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <i class="fas fa-briefcase"></i>
-                    <h3>12</h3>
-                    <p>Active Job Postings</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-file-alt"></i>
-                    <h3>245</h3>
-                    <p>Total Applications</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-user-check"></i>
-                    <h3>15</h3>
-                    <p>Candidates Hired</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-chart-line"></i>
-                    <h3>85%</h3>
-                    <p>Profile Completion</p>
-                </div>
-            </div>
-
-            <div class="tabs">
-                <div class="tab active" data-tab="postings">My Job Postings</div>
-                <div class="tab" data-tab="candidates">AI Matched Candidates</div>
-                <div class="tab" data-tab="applications">Applications</div>
-                <div class="tab" data-tab="company">Company Profile</div>
-            </div>
-
-            <div class="tab-content active" id="postings">
-                <div style="text-align: right; margin-bottom: 1rem;">
-                    <button class="btn btn-primary"><i class="fas fa-robot"></i> AI Job Posting Assistant</button>
-                </div>
-                <div class="job-listings">
-                    <!-- Employer's job postings will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <div class="tab-content" id="candidates">
-                <h3 style="margin-bottom: 1.5rem;">AI Recommended Candidates</h3>
-                <div class="job-listings">
-                    <!-- AI matched candidates will be populated by JavaScript -->
-                </div>
+        <div class="tab-content" id="applications">
+            <h3 style="margin-bottom: 1.5rem;">Application History</h3>
+            <div class="job-listings">
+                <!-- Application history will be populated by JavaScript -->
             </div>
         </div>
-    </section>
 
-    <!-- Admin Dashboard -->
-    <section id="admin-dashboard" class="dashboard">
-        <div class="container">
-            <div class="dashboard-header">
-                <h2 class="dashboard-title">Admin Dashboard</h2>
-                <div>
-                    <button class="btn btn-primary"><i class="fas fa-cog"></i> Settings</button>
+        <div class="tab-content" id="profile">
+            <div class="form-container">
+                <h3 style="margin-bottom: 1.5rem; text-align: center;">My Profile</h3>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" value="John Doe">
                 </div>
-            </div>
-
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <i class="fas fa-users"></i>
-                    <h3>55,327</h3>
-                    <p>Total Users</p>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" value="john.doe@example.com">
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-building"></i>
-                    <h3>5,248</h3>
-                    <p>Companies</p>
+                <div class="form-group">
+                    <label class="form-label">Professional Title</label>
+                    <input type="text" class="form-control" value="Senior Software Engineer">
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-briefcase"></i>
-                    <h3>25,693</h3>
-                    <p>Job Postings</p>
+                <div class="form-group">
+                    <label class="form-label">Skills</label>
+                    <input type="text" class="form-control" value="JavaScript, React, Node.js, Python">
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>23</h3>
-                    <p>Pending Approvals</p>
+                <div class="form-group">
+                    <label class="form-label">Resume</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="file" class="form-control">
+                        <button class="btn btn-success">Parse with AI</button>
+                    </div>
                 </div>
-            </div>
-
-            <div class="tabs">
-                <div class="tab active" data-tab="users">User Management</div>
-                <div class="tab" data-tab="jobs">Job Moderation</div>
-                <div class="tab" data-tab="reports">Reports & Analytics</div>
-                <div class="tab" data-tab="ai">AI Insights</div>
-            </div>
-
-            <div class="tab-content active" id="users">
-                <h3 style="margin-bottom: 1.5rem;">User Management</h3>
-                <div style="background: white; border-radius: var(--border-radius); padding: 1.5rem; box-shadow: var(--box-shadow);">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="border-bottom: 1px solid var(--light-gray);">
-                                <th style="padding: 1rem; text-align: left;">User</th>
-                                <th style="padding: 1rem; text-align: left;">Type</th>
-                                <th style="padding: 1rem; text-align: left;">Status</th>
-                                <th style="padding: 1rem; text-align: left;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid var(--light-gray);">
-                                <td style="padding: 1rem;">John Doe</td>
-                                <td style="padding: 1rem;">Job Seeker</td>
-                                <td style="padding: 1rem;"><span style="color: var(--success);">Verified</span></td>
-                                <td style="padding: 1rem;">
-                                    <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
-                                    <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Suspend</button>
-                                </td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid var(--light-gray);">
-                                <td style="padding: 1rem;">Tech Solutions Inc.</td>
-                                <td style="padding: 1rem;">Employer</td>
-                                <td style="padding: 1rem;"><span style="color: var(--warning);">Pending</span></td>
-                                <td style="padding: 1rem;">
-                                    <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Approve</button>
-                                    <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Reject</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <button class="btn btn-primary" style="width: 100%;">Update Profile</button>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <h3>CareerConnect AI</h3>
-                    <p>Revolutionizing job search with artificial intelligence to connect talent with opportunity.</p>
-                </div>
-                <div class="footer-column">
-                    <h3>Quick Links</h3>
-                    <ul class="footer-links">
-                        <li><a href="#">Home</a></li>
-                        <li><a href="#">Job Search</a></li>
-                        <li><a href="#">Employer Login</a></li>
-                        <li><a href="#">About Us</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h3>Resources</h3>
-                    <ul class="footer-links">
-                        <li><a href="#">Career Blog</a></li>
-                        <li><a href="#">Resume Tips</a></li>
-                        <li><a href="#">Interview Guide</a></li>
-                        <li><a href="#">FAQ</a></li>
-                    </ul>
-                </div>
-                <div class="footer-column">
-                    <h3>Contact Us</h3>
-                    <ul class="footer-links">
-                        <li><i class="fas fa-envelope"></i> support@careerconnect.ai</li>
-                        <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
-                        <li><i class="fas fa-map-marker-alt"></i> 123 Tech Street, Silicon Valley, CA</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2023 CareerConnect AI. All rights reserved.</p>
+<!-- Employer Dashboard -->
+<section id="employer-dashboard" class="dashboard">
+    <div class="container">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Employer Dashboard</h2>
+            <div>
+                <button class="btn btn-success"><i class="fas fa-plus"></i> Post a Job</button>
             </div>
         </div>
-    </footer>
 
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCk8PmOAc2ByKlh08BvXSYMjz7L51PLYqQ",
-            authDomain: "careerconnect-98bd6.firebaseapp.com",
-            projectId: "careerconnect-98bd6",
-            storageBucket: "careerconnect-98bd6.firebasestorage.app",
-            messagingSenderId: "126839972453",
-            appId: "1:126839972453:web:05fe8d6bf2d93cb2e99c8c",
-            measurementId: "G-122CC0E3EF"
-        };
+        <div class="stats-cards">
+            <div class="stat-card">
+                <i class="fas fa-briefcase"></i>
+                <h3>12</h3>
+                <p>Active Job Postings</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-file-alt"></i>
+                <h3>245</h3>
+                <p>Total Applications</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-user-check"></i>
+                <h3>15</h3>
+                <p>Candidates Hired</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-chart-line"></i>
+                <h3>85%</h3>
+                <p>Profile Completion</p>
+            </div>
+        </div>
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        <div class="tabs">
+            <div class="tab active" data-tab="postings">My Job Postings</div>
+            <div class="tab" data-tab="candidates">AI Matched Candidates</div>
+            <div class="tab" data-tab="applications">Applications</div>
+            <div class="tab" data-tab="company">Company Profile</div>
+        </div>
 
-        // Sample job data
-        const jobs = [
-            {
-                id: 1,
-                title: "Senior Frontend Developer",
-                company: "Tech Solutions Inc.",
-                salary: "$120,000 - $140,000",
-                location: "San Francisco, CA",
-                type: "Full-time",
-                remote: true,
-                posted: "2 days ago",
-                description: "We are looking for an experienced Frontend Developer to join our team.",
-                skills: ["React", "JavaScript", "TypeScript", "CSS"]
-            },
-            {
-                id: 2,
-                title: "Data Scientist",
-                company: "Data Insights Co.",
-                salary: "$110,000 - $130,000",
-                location: "Remote",
-                type: "Full-time",
-                remote: true,
-                posted: "1 week ago",
-                description: "Join our data team to build predictive models and analyze large datasets.",
-                skills: ["Python", "Machine Learning", "SQL", "Statistics"]
-            },
-            {
-                id: 3,
-                title: "Product Manager",
-                company: "Innovate Labs",
-                salary: "$130,000 - $150,000",
-                location: "New York, NY",
-                type: "Full-time",
-                remote: false,
-                posted: "3 days ago",
-                description: "Lead product development from conception to launch.",
-                skills: ["Product Strategy", "Agile", "UX", "Market Research"]
-            },
-            {
-                id: 4,
-                title: "DevOps Engineer",
-                company: "Cloud Systems",
-                salary: "$115,000 - $135,000",
-                location: "Austin, TX",
-                type: "Full-time",
-                remote: true,
-                posted: "5 days ago",
-                description: "Manage and optimize our cloud infrastructure and CI/CD pipelines.",
-                skills: ["AWS", "Docker", "Kubernetes", "Terraform"]
-            },
-            {
-                id: 5,
-                title: "UX/UI Designer",
-                company: "Creative Minds",
-                salary: "$90,000 - $110,000",
-                location: "Remote",
-                type: "Full-time",
-                remote: true,
-                posted: "1 day ago",
-                description: "Design beautiful and intuitive user interfaces for our products.",
-                skills: ["Figma", "UI Design", "User Research", "Prototyping"]
-            },
-            {
-                id: 6,
-                title: "Backend Developer",
-                company: "ServerTech",
-                salary: "$105,000 - $125,000",
-                location: "Boston, MA",
-                type: "Full-time",
-                remote: false,
-                posted: "4 days ago",
-                description: "Build scalable backend systems and APIs for our platform.",
-                skills: ["Node.js", "Python", "MongoDB", "API Design"]
-            }
-        ];
+        <div class="tab-content active" id="postings">
+            <div style="text-align: right; margin-bottom: 1rem;">
+                <button class="btn btn-primary"><i class="fas fa-robot"></i> AI Job Posting Assistant</button>
+            </div>
+            <div class="job-listings">
+                <!-- Employer's job postings will be populated by JavaScript -->
+            </div>
+        </div>
 
-        // Sample candidate data
-        const candidates = [
-            {
-                id: 1,
-                name: "Sarah Johnson",
-                title: "Full Stack Developer",
-                experience: "5 years",
-                location: "San Francisco, CA",
-                skills: ["JavaScript", "React", "Node.js", "MongoDB"],
-                match: "95%"
-            },
-            {
-                id: 2,
-                name: "Michael Chen",
-                title: "Data Scientist",
-                experience: "4 years",
-                location: "Remote",
-                skills: ["Python", "Machine Learning", "SQL", "TensorFlow"],
-                match: "92%"
-            },
-            {
-                id: 3,
-                name: "Emily Rodriguez",
-                title: "UX Designer",
-                experience: "3 years",
-                location: "New York, NY",
-                skills: ["Figma", "UI Design", "User Research", "Prototyping"],
-                match: "88%"
-            }
-        ];
+        <div class="tab-content" id="candidates">
+            <h3 style="margin-bottom: 1.5rem;">AI Recommended Candidates</h3>
+            <div class="job-listings">
+                <!-- AI matched candidates will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</section>
 
-        // DOM Elements
-        const themeToggle = document.getElementById('themeToggle');
-        const navLinks = document.querySelectorAll('.nav-link');
-        const dashboards = document.querySelectorAll('.dashboard');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const authModal = document.getElementById('authModal');
-        const loginBtn = document.getElementById('loginBtn');
-        const signupBtn = document.getElementById('signupBtn');
-        const closeModal = document.getElementById('closeModal');
-        const authTabs = document.querySelectorAll('.auth-tab');
-        const authForms = document.querySelectorAll('.auth-form');
-        const loginForm = document.getElementById('loginForm');
-        const signupForm = document.getElementById('signupForm');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const authButtons = document.getElementById('authButtons');
-        const userInfo = document.getElementById('userInfo');
-        const userName = document.getElementById('userName');
-        const userAvatar = document.getElementById('userAvatar');
-        const userRole = document.getElementById('userRole');
-        const loginMessage = document.getElementById('loginMessage');
-        const signupMessage = document.getElementById('signupMessage');
+<!-- Admin Dashboard -->
+<section id="admin-dashboard" class="dashboard">
+    <div class="container">
+        <div class="dashboard-header">
+            <h2 class="dashboard-title">Admin Dashboard</h2>
+            <div>
+                <button class="btn btn-primary"><i class="fas fa-cog"></i> Settings</button>
+            </div>
+        </div>
 
-        // Current user state
-        let currentUser = null;
-        let currentUserRole = null;
+        <div class="stats-cards">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>55,327</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-building"></i>
+                <h3>5,248</h3>
+                <p>Companies</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-briefcase"></i>
+                <h3>25,693</h3>
+                <p>Job Postings</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>23</h3>
+                <p>Pending Approvals</p>
+            </div>
+        </div>
 
-        // Theme Toggle
-        themeToggle.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            const icon = themeToggle.querySelector('i');
-            if (document.body.classList.contains('dark-mode')) {
-                icon.classList.remove('fa-moon');
-                icon.classList.add('fa-sun');
-            } else {
-                icon.classList.remove('fa-sun');
-                icon.classList.add('fa-moon');
-            }
-        });
+        <div class="tabs">
+            <div class="tab active" data-tab="users">User Management</div>
+            <div class="tab" data-tab="jobs">Job Moderation</div>
+            <div class="tab" data-tab="reports">Reports & Analytics</div>
+            <div class="tab" data-tab="ai">AI Insights</div>
+        </div>
 
-        // Auth Modal Toggle
-        loginBtn.addEventListener('click', () => {
-            authModal.classList.add('active');
-            switchAuthTab('login');
-        });
+        <div class="tab-content active" id="users">
+            <h3 style="margin-bottom: 1.5rem;">User Management</h3>
+            <div style="background: white; border-radius: var(--border-radius); padding: 1.5rem; box-shadow: var(--box-shadow);">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <th style="padding: 1rem; text-align: left;">User</th>
+                            <th style="padding: 1rem; text-align: left;">Type</th>
+                            <th style="padding: 1rem; text-align: left;">Status</th>
+                            <th style="padding: 1rem; text-align: left;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <td style="padding: 1rem;">John Doe</td>
+                            <td style="padding: 1rem;">Job Seeker</td>
+                            <td style="padding: 1rem;"><span style="color: var(--success);">Verified</span></td>
+                            <td style="padding: 1rem;">
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Edit</button>
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Suspend</button>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <td style="padding: 1rem;">Tech Solutions Inc.</td>
+                            <td style="padding: 1rem;">Employer</td>
+                            <td style="padding: 1rem;"><span style="color: var(--warning);">Pending</span></td>
+                            <td style="padding: 1rem;">
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Approve</button>
+                                <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Reject</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
 
-        signupBtn.addEventListener('click', () => {
-            authModal.classList.add('active');
-            switchAuthTab('signup');
-        });
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>CareerConnect AI</h3>
+                <p>Revolutionizing job search with artificial intelligence to connect talent with opportunity.</p>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Job Search</a></li>
+                    <li><a href="#">Employer Login</a></li>
+                    <li><a href="#">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Career Blog</a></li>
+                    <li><a href="#">Resume Tips</a></li>
+                    <li><a href="#">Interview Guide</a></li>
+                    <li><a href="#">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Contact Us</h3>
+                <ul class="footer-links">
+                    <li><i class="fas fa-envelope"></i> support@careerconnect.ai</li>
+                    <li><i class="fas fa-phone"></i> +1 (555) 123-4567</li>
+                    <li><i class="fas fa-map-marker-alt"></i> 123 Tech Street, Silicon Valley, CA</li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2023 CareerConnect AI. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
 
-        closeModal.addEventListener('click', () => {
-            authModal.classList.remove('active');
-        });
+<script>
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyCk8PmOAc2ByKlh08BvXSYMjz7L51PLYqQ",
+        authDomain: "careerconnect-98bd6.firebaseapp.com",
+        projectId: "careerconnect-98bd6",
+        storageBucket: "careerconnect-98bd6.firebasestorage.app",
+        messagingSenderId: "126839972453",
+        appId: "1:126839972453:web:05fe8d6bf2d93cb2e99c8c",
+        measurementId: "G-122CC0E3EF"
+    };
 
-        // Auth Tab Switching
-        authTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-auth-tab');
-                switchAuthTab(tabId);
-            });
-        });
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-        function switchAuthTab(tabId) {
-            authTabs.forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.getAttribute('data-auth-tab') === tabId) {
-                    tab.classList.add('active');
-                }
-            });
-
-            authForms.forEach(form => {
-                form.classList.remove('active');
-                if (form.id === `${tabId}Form`) {
-                    form.classList.add('active');
-                }
-            });
+    // Sample job data
+    const jobs = [
+        {
+            id: 1,
+            title: "Senior Frontend Developer",
+            company: "Tech Solutions Inc.",
+            salary: "$120,000 - $140,000",
+            location: "San Francisco, CA",
+            type: "Full-time",
+            remote: true,
+            posted: "2 days ago",
+            description: "We are looking for an experienced Frontend Developer to join our team.",
+            skills: ["React", "JavaScript", "TypeScript", "CSS"]
+        },
+        {
+            id: 2,
+            title: "Data Scientist",
+            company: "Data Insights Co.",
+            salary: "$110,000 - $130,000",
+            location: "Remote",
+            type: "Full-time",
+            remote: true,
+            posted: "1 week ago",
+            description: "Join our data team to build predictive models and analyze large datasets.",
+            skills: ["Python", "Machine Learning", "SQL", "Statistics"]
+        },
+        {
+            id: 3,
+            title: "Product Manager",
+            company: "Innovate Labs",
+            salary: "$130,000 - $150,000",
+            location: "New York, NY",
+            type: "Full-time",
+            remote: false,
+            posted: "3 days ago",
+            description: "Lead product development from conception to launch.",
+            skills: ["Product Strategy", "Agile", "UX", "Market Research"]
+        },
+        {
+            id: 4,
+            title: "DevOps Engineer",
+            company: "Cloud Systems",
+            salary: "$115,000 - $135,000",
+            location: "Austin, TX",
+            type: "Full-time",
+            remote: true,
+            posted: "5 days ago",
+            description: "Manage and optimize our cloud infrastructure and CI/CD pipelines.",
+            skills: ["AWS", "Docker", "Kubernetes", "Terraform"]
+        },
+        {
+            id: 5,
+            title: "UX/UI Designer",
+            company: "Creative Minds",
+            salary: "$90,000 - $110,000",
+            location: "Remote",
+            type: "Full-time",
+            remote: true,
+            posted: "1 day ago",
+            description: "Design beautiful and intuitive user interfaces for our products.",
+            skills: ["Figma", "UI Design", "User Research", "Prototyping"]
+        },
+        {
+            id: 6,
+            title: "Backend Developer",
+            company: "ServerTech",
+            salary: "$105,000 - $125,000",
+            location: "Boston, MA",
+            type: "Full-time",
+            remote: false,
+            posted: "4 days ago",
+            description: "Build scalable backend systems and APIs for our platform.",
+            skills: ["Node.js", "Python", "MongoDB", "API Design"]
         }
+    ];
 
-        // Login Form Submission
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const userType = document.getElementById('loginUserType').value;
+    // Sample candidate data
+    const candidates = [
+        {
+            id: 1,
+            name: "Sarah Johnson",
+            title: "Full Stack Developer",
+            experience: "5 years",
+            location: "San Francisco, CA",
+            skills: ["JavaScript", "React", "Node.js", "MongoDB"],
+            match: "95%"
+        },
+        {
+            id: 2,
+            name: "Michael Chen",
+            title: "Data Scientist",
+            experience: "4 years",
+            location: "Remote",
+            skills: ["Python", "Machine Learning", "SQL", "TensorFlow"],
+            match: "92%"
+        },
+        {
+            id: 3,
+            name: "Emily Rodriguez",
+            title: "UX Designer",
+            experience: "3 years",
+            location: "New York, NY",
+            skills: ["Figma", "UI Design", "User Research", "Prototyping"],
+            match: "88%"
+        }
+    ];
 
-            loginMessage.textContent = '';
-            loginMessage.style.color = '';
+    // DOM Elements
+    const themeToggle = document.getElementById('themeToggle');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const dashboards = document.querySelectorAll('.dashboard');
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const authModal = document.getElementById('authModal');
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+    const closeModal = document.getElementById('closeModal');
+    const authTabs = document.querySelectorAll('.auth-tab');
+    const authForms = document.querySelectorAll('.auth-form');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const authButtons = document.getElementById('authButtons');
+    const userInfo = document.getElementById('userInfo');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const userRole = document.getElementById('userRole');
+    const loginMessage = document.getElementById('loginMessage');
+    const signupMessage = document.getElementById('signupMessage');
 
-            try {
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                currentUser = userCredential.user;
-                
-                // Check if this is the admin user
-                if (email === 'adavid134@yahoo.com' && userType === 'admin') {
-                    currentUserRole = 'admin';
-                    // Store user data in Firestore
-                    await db.collection('users').doc(currentUser.uid).set({
-                        name: 'Adavid134',
-                        email: email,
-                        role: 'admin',
-                        lastLogin: new Date()
-                    }, { merge: true });
-                } else {
-                    currentUserRole = userType;
-                    // Store user data in Firestore
-                    await db.collection('users').doc(currentUser.uid).set({
-                        email: email,
-                        role: userType,
-                        lastLogin: new Date()
-                    }, { merge: true });
-                }
-                
-                updateUIAfterAuth();
-                authModal.classList.remove('active');
-                loginForm.reset();
-                
-                // Redirect to appropriate dashboard
-                if (currentUserRole === 'admin') {
-                    showDashboard('admin-dashboard');
-                } else if (currentUserRole === 'employer') {
-                    showDashboard('employer-dashboard');
-                } else {
-                    showDashboard('job-seeker-dashboard');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                loginMessage.textContent = error.message;
-                loginMessage.style.color = 'var(--danger)';
+    // Current user state
+    let currentUser = null;
+    let currentUserRole = null;
+
+    // Theme Toggle
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const icon = themeToggle.querySelector('i');
+        if (document.body.classList.contains('dark-mode')) {
+            icon.classList.remove('fa-moon');
+            icon.classList.add('fa-sun');
+        } else {
+            icon.classList.remove('fa-sun');
+            icon.classList.add('fa-moon');
+        }
+    });
+
+    // Auth Modal Toggle
+    loginBtn.addEventListener('click', () => {
+        authModal.classList.add('active');
+        switchAuthTab('login');
+    });
+
+    signupBtn.addEventListener('click', () => {
+        authModal.classList.add('active');
+        switchAuthTab('signup');
+    });
+
+    closeModal.addEventListener('click', () => {
+        authModal.classList.remove('active');
+    });
+
+    // Auth Tab Switching
+    authTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.getAttribute('data-auth-tab');
+            switchAuthTab(tabId);
+        });
+    });
+
+    function switchAuthTab(tabId) {
+        authTabs.forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-auth-tab') === tabId) {
+                tab.classList.add('active');
             }
         });
 
-        // Signup Form Submission
-        signupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const confirmPassword = document.getElementById('signupConfirmPassword').value;
-            const userType = document.getElementById('signupUserType').value;
-
-            signupMessage.textContent = '';
-            signupMessage.style.color = '';
-
-            if (password !== confirmPassword) {
-                signupMessage.textContent = 'Passwords do not match';
-                signupMessage.style.color = 'var(--danger)';
-                return;
+        authForms.forEach(form => {
+            form.classList.remove('active');
+            if (form.id === `${tabId}Form`) {
+                form.classList.add('active');
             }
+        });
+    }
 
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                currentUser = userCredential.user;
-                currentUserRole = userType;
-                
+    // Login Form Submission
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const userType = document.getElementById('loginUserType').value;
+
+        loginMessage.textContent = '';
+        loginMessage.style.color = '';
+
+        try {
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            currentUser = userCredential.user;
+            
+            // Check if this is the admin user
+            if (email === 'adavid134@yahoo.com' && userType === 'admin') {
+                currentUserRole = 'admin';
                 // Store user data in Firestore
                 await db.collection('users').doc(currentUser.uid).set({
-                    name: name,
+                    name: 'Adavid134',
+                    email: email,
+                    role: 'admin',
+                    lastLogin: new Date()
+                }, { merge: true });
+            } else {
+                currentUserRole = userType;
+                // Store user data in Firestore
+                await db.collection('users').doc(currentUser.uid).set({
                     email: email,
                     role: userType,
-                    createdAt: new Date()
-                });
-                
-                updateUIAfterAuth();
-                authModal.classList.remove('active');
-                signupForm.reset();
-                
-                // Redirect to appropriate dashboard
-                if (currentUserRole === 'employer') {
-                    showDashboard('employer-dashboard');
-                } else {
-                    showDashboard('job-seeker-dashboard');
-                }
-            } catch (error) {
-                console.error('Signup error:', error);
-                signupMessage.textContent = error.message;
-                signupMessage.style.color = 'var(--danger)';
+                    lastLogin: new Date()
+                }, { merge: true });
             }
-        });
-
-        // Logout
-        logoutBtn.addEventListener('click', () => {
-            auth.signOut().then(() => {
-                currentUser = null;
-                currentUserRole = null;
-                updateUIAfterAuth();
-                showDashboard('home');
-            });
-        });
-
-        // Update UI based on authentication state
-        function updateUIAfterAuth() {
-            if (currentUser) {
-                authButtons.style.display = 'none';
-                userInfo.style.display = 'flex';
-                
-                // Set user info
-                const displayName = currentUser.displayName || currentUser.email.split('@')[0];
-                userName.textContent = displayName;
-                userAvatar.textContent = displayName.charAt(0).toUpperCase();
-                userRole.textContent = currentUserRole === 'admin' ? 'Admin' : 
-                                      currentUserRole === 'employer' ? 'Employer' : 'Job Seeker';
+            
+            updateUIAfterAuth();
+            authModal.classList.remove('active');
+            loginForm.reset();
+            
+            // Redirect to appropriate dashboard
+            if (currentUserRole === 'admin') {
+                showDashboard('admin-dashboard');
+            } else if (currentUserRole === 'employer') {
+                showDashboard('employer-dashboard');
             } else {
-                authButtons.style.display = 'flex';
-                userInfo.style.display = 'none';
+                showDashboard('job-seeker-dashboard');
             }
+        } catch (error) {
+            console.error('Login error:', error);
+            loginMessage.textContent = error.message;
+            loginMessage.style.color = 'var(--danger)';
+        }
+    });
+
+    // Signup Form Submission
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('signupName').value;
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const confirmPassword = document.getElementById('signupConfirmPassword').value;
+        const userType = document.getElementById('signupUserType').value;
+
+        signupMessage.textContent = '';
+        signupMessage.style.color = '';
+
+        if (password !== confirmPassword) {
+            signupMessage.textContent = 'Passwords do not match';
+            signupMessage.style.color = 'var(--danger)';
+            return;
         }
 
-        // Navigation
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const target = link.getAttribute('data-target');
-                
-                // Update active nav link
-                navLinks.forEach(nav => nav.classList.remove('active'));
-                link.classList.add('active');
-                
-                showDashboard(target);
-            });
-        });
-
-        // Show Dashboard
-        function showDashboard(dashboardId) {
-            // Check authentication for protected dashboards
-            if ((dashboardId === 'job-seeker-dashboard' && currentUserRole !== 'jobseeker' && currentUserRole !== 'admin') ||
-                (dashboardId === 'employer-dashboard' && currentUserRole !== 'employer' && currentUserRole !== 'admin') ||
-                (dashboardId === 'admin-dashboard' && currentUserRole !== 'admin')) {
-                
-                if (!currentUser) {
-                    authModal.classList.add('active');
-                    switchAuthTab('login');
-                } else {
-                    alert('You do not have permission to access this dashboard.');
-                }
-                return;
-            }
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            currentUser = userCredential.user;
+            currentUserRole = userType;
             
-            // Show target dashboard
-            dashboards.forEach(dashboard => {
-                dashboard.classList.remove('active');
-                if (dashboard.id === dashboardId) {
-                    dashboard.classList.add('active');
-                }
+            // Store user data in Firestore
+            await db.collection('users').doc(currentUser.uid).set({
+                name: name,
+                email: email,
+                role: userType,
+                createdAt: new Date()
             });
             
-            // Load appropriate content
-            if (dashboardId === 'home') {
-                loadHomePage();
-            } else if (dashboardId === 'job-seeker-dashboard') {
-                loadJobSeekerDashboard();
-            } else if (dashboardId === 'employer-dashboard') {
-                loadEmployerDashboard();
-            } else if (dashboardId === 'admin-dashboard') {
-                loadAdminDashboard();
-            }
-        }
-
-        // Tab Switching
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Update active tab
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Show target tab content
-                tabContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === tabId) {
-                        content.classList.add('active');
-                    }
-                });
-            });
-        });
-
-        // Load Home Page
-        function loadHomePage() {
-            const jobListings = document.querySelector('#home .job-listings');
-            jobListings.innerHTML = '';
+            updateUIAfterAuth();
+            authModal.classList.remove('active');
+            signupForm.reset();
             
-            // Display featured jobs
-            jobs.slice(0, 6).forEach(job => {
-                jobListings.innerHTML += `
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div>
-                                <div class="job-card-title">${job.title}</div>
-                                <div class="job-card-company">${job.company}</div>
-                            </div>
-                            <div class="job-card-salary">${job.salary}</div>
-                        </div>
-                        <div class="job-card-details">
-                            <span class="job-tag">${job.location}</span>
-                            <span class="job-tag">${job.type}</span>
-                            ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
-                        </div>
-                        <p>${job.description}</p>
-                        <div class="job-card-footer">
-                            <div class="job-card-date">Posted ${job.posted}</div>
-                            <button class="btn btn-primary">Apply Now</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // Load Job Seeker Dashboard
-        function loadJobSeekerDashboard() {
-            // Load recommended jobs
-            const recommendedJobs = document.querySelector('#recommended .job-listings');
-            recommendedJobs.innerHTML = '';
-            
-            jobs.slice(0, 4).forEach(job => {
-                recommendedJobs.innerHTML += `
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div>
-                                <div class="job-card-title">${job.title}</div>
-                                <div class="job-card-company">${job.company}</div>
-                            </div>
-                            <div class="job-card-salary">${job.salary}</div>
-                        </div>
-                        <div class="job-card-details">
-                            <span class="job-tag">${job.location}</span>
-                            <span class="job-tag">${job.type}</span>
-                            ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
-                        </div>
-                        <p>${job.description}</p>
-                        <div class="job-card-footer">
-                            <div class="job-card-date">AI Match: 92%</div>
-                            <button class="btn btn-primary">Apply Now</button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            // Load search results
-            const searchResults = document.querySelector('#search .job-listings');
-            searchResults.innerHTML = '';
-            
-            jobs.forEach(job => {
-                searchResults.innerHTML += `
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div>
-                                <div class="job-card-title">${job.title}</div>
-                                <div class="job-card-company">${job.company}</div>
-                            </div>
-                            <div class="job-card-salary">${job.salary}</div>
-                        </div>
-                        <div class="job-card-details">
-                            <span class="job-tag">${job.location}</span>
-                            <span class="job-tag">${job.type}</span>
-                            ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
-                        </div>
-                        <p>${job.description}</p>
-                        <div class="job-card-footer">
-                            <div class="job-card-date">Posted ${job.posted}</div>
-                            <button class="btn btn-primary">Apply Now</button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            // Load application history
-            const applications = document.querySelector('#applications .job-listings');
-            applications.innerHTML = '';
-            
-            jobs.slice(0, 3).forEach(job => {
-                const statuses = ['Applied', 'Under Review', 'Interview Scheduled'];
-                const status = statuses[Math.floor(Math.random() * statuses.length)];
-                
-                applications.innerHTML += `
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div>
-                                <div class="job-card-title">${job.title}</div>
-                                <div class="job-card-company">${job.company}</div>
-                            </div>
-                            <div class="job-card-salary">${status}</div>
-                        </div>
-                        <div class="job-card-details">
-                            <span class="job-tag">${job.location}</span>
-                            <span class="job-tag">${job.type}</span>
-                            ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
-                        </div>
-                        <p>${job.description}</p>
-                        <div class="job-card-footer">
-                            <div class="job-card-date">Applied 5 days ago</div>
-                            <button class="btn btn-outline">View Details</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // Load Employer Dashboard
-        function loadEmployerDashboard() {
-            // Load job postings
-            const jobPostings = document.querySelector('#postings .job-listings');
-            jobPostings.innerHTML = '';
-            
-            jobs.slice(0, 3).forEach(job => {
-                const applications = Math.floor(Math.random() * 50) + 10;
-                
-                jobPostings.innerHTML += `
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div>
-                                <div class="job-card-title">${job.title}</div>
-                                <div class="job-card-company">${job.company}</div>
-                            </div>
-                            <div class="job-card-salary">${applications} Applications</div>
-                        </div>
-                        <div class="job-card-details">
-                            <span class="job-tag">${job.location}</span>
-                            <span class="job-tag">${job.type}</span>
-                            ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
-                        </div>
-                        <p>${job.description}</p>
-                        <div class="job-card-footer">
-                            <div class="job-card-date">Posted ${job.posted}</div>
-                            <div>
-                                <button class="btn btn-outline">Edit</button>
-                                <button class="btn btn-primary">View Applications</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            // Load AI matched candidates
-            const matchedCandidates = document.querySelector('#candidates .job-listings');
-            matchedCandidates.innerHTML = '';
-            
-            candidates.forEach(candidate => {
-                matchedCandidates.innerHTML += `
-                    <div class="job-card">
-                        <div class="job-card-header">
-                            <div>
-                                <div class="job-card-title">${candidate.name}</div>
-                                <div class="job-card-company">${candidate.title}</div>
-                            </div>
-                            <div class="job-card-salary">${candidate.match} Match</div>
-                        </div>
-                        <div class="job-card-details">
-                            <span class="job-tag">${candidate.experience} experience</span>
-                            <span class="job-tag">${candidate.location}</span>
-                        </div>
-                        <p>Skills: ${candidate.skills.join(', ')}</p>
-                        <div class="job-card-footer">
-                            <div class="job-card-date">Last active: 2 days ago</div>
-                            <div>
-                                <button class="btn btn-outline">View Profile</button>
-                                <button class="btn btn-primary">Contact</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // Load Admin Dashboard
-        function loadAdminDashboard() {
-            // Admin dashboard content is mostly static in this example
-        }
-
-        // Check auth state on page load
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                // Get user role from Firestore
-                db.collection('users').doc(user.uid).get().then((doc) => {
-                    if (doc.exists) {
-                        currentUserRole = doc.data().role;
-                        if (doc.data().name) {
-                            userName.textContent = doc.data().name;
-                            userAvatar.textContent = doc.data().name.charAt(0).toUpperCase();
-                        }
-                        userRole.textContent = currentUserRole === 'admin' ? 'Admin' : 
-                                              currentUserRole === 'employer' ? 'Employer' : 'Job Seeker';
-                    }
-                    updateUIAfterAuth();
-                });
+            // Redirect to appropriate dashboard
+            if (currentUserRole === 'employer') {
+                showDashboard('employer-dashboard');
             } else {
-                currentUser = null;
-                currentUserRole = null;
-                updateUIAfterAuth();
+                showDashboard('job-seeker-dashboard');
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            signupMessage.textContent = error.message;
+            signupMessage.style.color = 'var(--danger)';
+        }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+        auth.signOut().then(() => {
+            currentUser = null;
+            currentUserRole = null;
+            updateUIAfterAuth();
+            showDashboard('home');
+        });
+    });
+
+    // Update UI based on authentication state
+    function updateUIAfterAuth() {
+        if (currentUser) {
+            authButtons.style.display = 'none';
+            userInfo.style.display = 'flex';
+            
+            // Set user info
+            const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+            userName.textContent = displayName;
+            userAvatar.textContent = displayName.charAt(0).toUpperCase();
+            userRole.textContent = currentUserRole === 'admin' ? 'Admin' : 
+                                  currentUserRole === 'employer' ? 'Employer' : 'Job Seeker';
+        } else {
+            authButtons.style.display = 'flex';
+            userInfo.style.display = 'none';
+        }
+    }
+
+    // Navigation
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = link.getAttribute('data-target');
+            
+            // Update active nav link
+            navLinks.forEach(nav => nav.classList.remove('active'));
+            link.classList.add('active');
+            
+            showDashboard(target);
+        });
+    });
+
+    // Show Dashboard
+    function showDashboard(dashboardId) {
+        // Check authentication for protected dashboards
+        if ((dashboardId === 'job-seeker-dashboard' && currentUserRole !== 'jobseeker' && currentUserRole !== 'admin') ||
+            (dashboardId === 'employer-dashboard' && currentUserRole !== 'employer' && currentUserRole !== 'admin') ||
+            (dashboardId === 'admin-dashboard' && currentUserRole !== 'admin')) {
+            
+            if (!currentUser) {
+                authModal.classList.add('active');
+                switchAuthTab('login');
+            } else {
+                alert('You do not have permission to access this dashboard.');
+            }
+            return;
+        }
+        
+        // Show target dashboard
+        dashboards.forEach(dashboard => {
+            dashboard.classList.remove('active');
+            if (dashboard.id === dashboardId) {
+                dashboard.classList.add('active');
             }
         });
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
+        
+        // Load appropriate content
+        if (dashboardId === 'home') {
             loadHomePage();
+        } else if (dashboardId === 'job-seeker-dashboard') {
+            loadJobSeekerDashboard();
+        } else if (dashboardId === 'employer-dashboard') {
+            loadEmployerDashboard();
+        } else if (dashboardId === 'admin-dashboard') {
+            loadAdminDashboard();
+        }
+    }
+
+    // Tab Switching
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.getAttribute('data-tab');
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Show target tab content
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === tabId) {
+                    content.classList.add('active');
+                }
+            });
         });
-    </script>
-</body>
-</html>
+    });
+
+    // Load Home Page
+    function loadHomePage() {
+        const jobListings = document.querySelector('#home .job-listings');
+        jobListings.innerHTML = '';
+        
+        // Display featured jobs
+        jobs.slice(0, 6).forEach(job => {
+            jobListings.innerHTML += `
+                <div class="job-card">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-card-title">${job.title}</div>
+                            <div class="job-card-company">${job.company}</div>
+                        </div>
+                        <div class="job-card-salary">${job.salary}</div>
+                    </div>
+                    <div class="job-card-details">
+                        <span class="job-tag">${job.location}</span>
+                        <span class="job-tag">${job.type}</span>
+                        ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
+                    </div>
+                    <p>${job.description}</p>
+                    <div class="job-card-footer">
+                        <div class="job-card-date">Posted ${job.posted}</div>
+                        <button class="btn btn-primary">Apply Now</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Load Job Seeker Dashboard
+    function loadJobSeekerDashboard() {
+        // Load recommended jobs
+        const recommendedJobs = document.querySelector('#recommended .job-listings');
+        recommendedJobs.innerHTML = '';
+        
+        jobs.slice(0, 4).forEach(job => {
+            recommendedJobs.innerHTML += `
+                <div class="job-card">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-card-title">${job.title}</div>
+                            <div class="job-card-company">${job.company}</div>
+                        </div>
+                        <div class="job-card-salary">${job.salary}</div>
+                    </div>
+                    <div class="job-card-details">
+                        <span class="job-tag">${job.location}</span>
+                        <span class="job-tag">${job.type}</span>
+                        ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
+                    </div>
+                    <p>${job.description}</p>
+                    <div class="job-card-footer">
+                        <div class="job-card-date">AI Match: 92%</div>
+                        <button class="btn btn-primary">Apply Now</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Load search results
+        const searchResults = document.querySelector('#search .job-listings');
+        searchResults.innerHTML = '';
+        
+        jobs.forEach(job => {
+            searchResults.innerHTML += `
+                <div class="job-card">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-card-title">${job.title}</div>
+                            <div class="job-card-company">${job.company}</div>
+                        </div>
+                        <div class="job-card-salary">${job.salary}</div>
+                    </div>
+                    <div class="job-card-details">
+                        <span class="job-tag">${job.location}</span>
+                        <span class="job-tag">${job.type}</span>
+                        ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
+                    </div>
+                    <p>${job.description}</p>
+                    <div class="job-card-footer">
+                        <div class="job-card-date">Posted ${job.posted}</div>
+                        <button class="btn btn-primary">Apply Now</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Load application history
+        const applications = document.querySelector('#applications .job-listings');
+        applications.innerHTML = '';
+        
+        jobs.slice(0, 3).forEach(job => {
+            const statuses = ['Applied', 'Under Review', 'Interview Scheduled'];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            
+            applications.innerHTML += `
+                <div class="job-card">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-card-title">${job.title}</div>
+                            <div class="job-card-company">${job.company}</div>
+                        </div>
+                        <div class="job-card-salary">${status}</div>
+                    </div>
+                    <div class="job-card-details">
+                        <span class="job-tag">${job.location}</span>
+                        <span class="job-tag">${job.type}</span>
+                        ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
+                    </div>
+                    <p>${job.description}</p>
+                    <div class="job-card-footer">
+                        <div class="job-card-date">Applied 5 days ago</div>
+                        <button class="btn btn-outline">View Details</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Load Employer Dashboard
+    function loadEmployerDashboard() {
+        // Load job postings
+        const jobPostings = document.querySelector('#postings .job-listings');
+        jobPostings.innerHTML = '';
+        
+        jobs.slice(0, 3).forEach(job => {
+            const applications = Math.floor(Math.random() * 50) + 10;
+            
+            jobPostings.innerHTML += `
+                <div class="job-card">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-card-title">${job.title}</div>
+                            <div class="job-card-company">${job.company}</div>
+                        </div>
+                        <div class="job-card-salary">${applications} Applications</div>
+                    </div>
+                    <div class="job-card-details">
+                        <span class="job-tag">${job.location}</span>
+                        <span class="job-tag">${job.type}</span>
+                        ${job.remote ? '<span class="job-tag">Remote</span>' : ''}
+                    </div>
+                    <p>${job.description}</p>
+                    <div class="job-card-footer">
+                        <div class="job-card-date">Posted ${job.posted}</div>
+                        <div>
+                            <button class="btn btn-outline">Edit</button>
+                            <button class="btn btn-primary">View Applications</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Load AI matched candidates
+        const matchedCandidates = document.querySelector('#candidates .job-listings');
+        matchedCandidates.innerHTML = '';
+        
+        candidates.forEach(candidate => {
+            matchedCandidates.innerHTML += `
+                <div class="job-card">
+                    <div class="job-card-header">
+                        <div>
+                            <div class="job-card-title">${candidate.name}</div>
+                            <div class="job-card-company">${candidate.title}</div>
+                        </div>
+                        <div class="job-card-salary">${candidate.match} Match</div>
+                    </div>
+                    <div class="job-card-details">
+                        <span class="job-tag">${candidate.experience} experience</span>
+                        <span class="job-tag">${candidate.location}</span>
+                    </div>
+                    <p>Skills: ${candidate.skills.join(', ')}</p>
+                    <div class="job-card-footer">
+                        <div class="job-card-date">Last active: 2 days ago</div>
+                        <div>
+                            <button class="btn btn-outline">View Profile</button>
+                            <button class="btn btn-primary">Contact</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Load Admin Dashboard
+    function loadAdminDashboard() {
+        // Admin dashboard content is mostly static in this example
+    }
+
+    // Check auth state on page load
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentUser = user;
+            // Get user role from Firestore
+            db.collection('users').doc(user.uid).get().then((doc) => {
+                if (doc.exists) {
+                    currentUserRole = doc.data().role;
+                    if (doc.data().name) {
+                        userName.textContent = doc.data().name;
+                        userAvatar.textContent = doc.data().name.charAt(0).toUpperCase();
+                    }
+                    userRole.textContent = currentUserRole === 'admin' ? 'Admin' : 
+                                          currentUserRole === 'employer' ? 'Employer' : 'Job Seeker';
+                }
+                updateUIAfterAuth();
+            });
+        } else {
+            currentUser = null;
+            currentUserRole = null;
+            updateUIAfterAuth();
+        }
+    });
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', () => {
+        loadHomePage();
+    });
+</script>
