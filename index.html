@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerConnect AI - Smart Job Matching Platform</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
     <style>
         :root {
             --primary: #4361ee;
@@ -441,6 +447,110 @@
             margin-bottom: 0.5rem;
         }
 
+        /* Auth Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .modal-title {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            border-bottom: 3px solid transparent;
+        }
+
+        .auth-tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--gray);
+        }
+
+        .form-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
         /* Footer */
         footer {
             background-color: var(--dark);
@@ -541,12 +651,20 @@
                     <li><a href="#">Blog</a></li>
                     <li><a href="#">Contact</a></li>
                 </ul>
-                <div class="auth-buttons">
-                    <button class="btn btn-outline">Login</button>
-                    <button class="btn btn-primary">Sign Up</button>
+                <div class="auth-buttons" id="authButtons">
+                    <button class="btn btn-outline" id="loginBtn">Login</button>
+                    <button class="btn btn-primary" id="signupBtn">Sign Up</button>
                     <button class="theme-toggle" id="themeToggle">
                         <i class="fas fa-moon"></i>
                     </button>
+                </div>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <div class="user-avatar" id="userAvatar">JD</div>
+                    <div>
+                        <div id="userName">John Doe</div>
+                        <div style="font-size: 0.8rem; color: var(--gray);" id="userRole">Job Seeker</div>
+                    </div>
+                    <button class="btn btn-outline" id="logoutBtn" style="margin-left: 1rem;">Logout</button>
                 </div>
                 <div class="mobile-menu">
                     <i class="fas fa-bars"></i>
@@ -554,6 +672,76 @@
             </nav>
         </div>
     </header>
+
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <h2 class="modal-title">CareerConnect AI</h2>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-auth-tab="login">Login</div>
+                <div class="auth-tab" data-auth-tab="signup">Sign Up</div>
+            </div>
+            
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">User Type</label>
+                    <select class="form-control" id="loginUserType">
+                        <option value="jobseeker">Job Seeker</option>
+                        <option value="employer">Employer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                <div class="form-footer">
+                    <a href="#" id="forgotPassword">Forgot your password?</a>
+                </div>
+                <div id="loginMessage" style="margin-top: 1rem; text-align: center;"></div>
+            </form>
+            
+            <!-- Signup Form -->
+            <form class="auth-form" id="signupForm">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="signupName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" id="signupEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="signupPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="signupConfirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">User Type</label>
+                    <select class="form-control" id="signupUserType">
+                        <option value="jobseeker">Job Seeker</option>
+                        <option value="employer">Employer</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                <div class="form-footer">
+                    By signing up, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                </div>
+                <div id="signupMessage" style="margin-top: 1rem; text-align: center;"></div>
+            </form>
+        </div>
+    </div>
 
     <!-- Home/Landing Page -->
     <section id="home" class="dashboard active">
@@ -872,6 +1060,22 @@
     </footer>
 
     <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCk8PmOAc2ByKlh08BvXSYMjz7L51PLYqQ",
+            authDomain: "careerconnect-98bd6.firebaseapp.com",
+            projectId: "careerconnect-98bd6",
+            storageBucket: "careerconnect-98bd6.firebasestorage.app",
+            messagingSenderId: "126839972453",
+            appId: "1:126839972453:web:05fe8d6bf2d93cb2e99c8c",
+            measurementId: "G-122CC0E3EF"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
         // Sample job data
         const jobs = [
             {
@@ -985,6 +1189,26 @@
         const dashboards = document.querySelectorAll('.dashboard');
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
+        const authModal = document.getElementById('authModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const signupBtn = document.getElementById('signupBtn');
+        const closeModal = document.getElementById('closeModal');
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const authForms = document.querySelectorAll('.auth-form');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authButtons = document.getElementById('authButtons');
+        const userInfo = document.getElementById('userInfo');
+        const userName = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar');
+        const userRole = document.getElementById('userRole');
+        const loginMessage = document.getElementById('loginMessage');
+        const signupMessage = document.getElementById('signupMessage');
+
+        // Current user state
+        let currentUser = null;
+        let currentUserRole = null;
 
         // Theme Toggle
         themeToggle.addEventListener('click', () => {
@@ -999,6 +1223,174 @@
             }
         });
 
+        // Auth Modal Toggle
+        loginBtn.addEventListener('click', () => {
+            authModal.classList.add('active');
+            switchAuthTab('login');
+        });
+
+        signupBtn.addEventListener('click', () => {
+            authModal.classList.add('active');
+            switchAuthTab('signup');
+        });
+
+        closeModal.addEventListener('click', () => {
+            authModal.classList.remove('active');
+        });
+
+        // Auth Tab Switching
+        authTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-auth-tab');
+                switchAuthTab(tabId);
+            });
+        });
+
+        function switchAuthTab(tabId) {
+            authTabs.forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.getAttribute('data-auth-tab') === tabId) {
+                    tab.classList.add('active');
+                }
+            });
+
+            authForms.forEach(form => {
+                form.classList.remove('active');
+                if (form.id === `${tabId}Form`) {
+                    form.classList.add('active');
+                }
+            });
+        }
+
+        // Login Form Submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const userType = document.getElementById('loginUserType').value;
+
+            loginMessage.textContent = '';
+            loginMessage.style.color = '';
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                
+                // Check if this is the admin user
+                if (email === 'adavid134@yahoo.com' && userType === 'admin') {
+                    currentUserRole = 'admin';
+                    // Store user data in Firestore
+                    await db.collection('users').doc(currentUser.uid).set({
+                        name: 'Adavid134',
+                        email: email,
+                        role: 'admin',
+                        lastLogin: new Date()
+                    }, { merge: true });
+                } else {
+                    currentUserRole = userType;
+                    // Store user data in Firestore
+                    await db.collection('users').doc(currentUser.uid).set({
+                        email: email,
+                        role: userType,
+                        lastLogin: new Date()
+                    }, { merge: true });
+                }
+                
+                updateUIAfterAuth();
+                authModal.classList.remove('active');
+                loginForm.reset();
+                
+                // Redirect to appropriate dashboard
+                if (currentUserRole === 'admin') {
+                    showDashboard('admin-dashboard');
+                } else if (currentUserRole === 'employer') {
+                    showDashboard('employer-dashboard');
+                } else {
+                    showDashboard('job-seeker-dashboard');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginMessage.textContent = error.message;
+                loginMessage.style.color = 'var(--danger)';
+            }
+        });
+
+        // Signup Form Submission
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const userType = document.getElementById('signupUserType').value;
+
+            signupMessage.textContent = '';
+            signupMessage.style.color = '';
+
+            if (password !== confirmPassword) {
+                signupMessage.textContent = 'Passwords do not match';
+                signupMessage.style.color = 'var(--danger)';
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                currentUserRole = userType;
+                
+                // Store user data in Firestore
+                await db.collection('users').doc(currentUser.uid).set({
+                    name: name,
+                    email: email,
+                    role: userType,
+                    createdAt: new Date()
+                });
+                
+                updateUIAfterAuth();
+                authModal.classList.remove('active');
+                signupForm.reset();
+                
+                // Redirect to appropriate dashboard
+                if (currentUserRole === 'employer') {
+                    showDashboard('employer-dashboard');
+                } else {
+                    showDashboard('job-seeker-dashboard');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                signupMessage.textContent = error.message;
+                signupMessage.style.color = 'var(--danger)';
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                currentUser = null;
+                currentUserRole = null;
+                updateUIAfterAuth();
+                showDashboard('home');
+            });
+        });
+
+        // Update UI based on authentication state
+        function updateUIAfterAuth() {
+            if (currentUser) {
+                authButtons.style.display = 'none';
+                userInfo.style.display = 'flex';
+                
+                // Set user info
+                const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+                userName.textContent = displayName;
+                userAvatar.textContent = displayName.charAt(0).toUpperCase();
+                userRole.textContent = currentUserRole === 'admin' ? 'Admin' : 
+                                      currentUserRole === 'employer' ? 'Employer' : 'Job Seeker';
+            } else {
+                authButtons.style.display = 'flex';
+                userInfo.style.display = 'none';
+            }
+        }
+
         // Navigation
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
@@ -1009,26 +1401,45 @@
                 navLinks.forEach(nav => nav.classList.remove('active'));
                 link.classList.add('active');
                 
-                // Show target dashboard
-                dashboards.forEach(dashboard => {
-                    dashboard.classList.remove('active');
-                    if (dashboard.id === target) {
-                        dashboard.classList.add('active');
-                    }
-                });
-                
-                // Load appropriate content
-                if (target === 'home') {
-                    loadHomePage();
-                } else if (target === 'job-seeker-dashboard') {
-                    loadJobSeekerDashboard();
-                } else if (target === 'employer-dashboard') {
-                    loadEmployerDashboard();
-                } else if (target === 'admin-dashboard') {
-                    loadAdminDashboard();
-                }
+                showDashboard(target);
             });
         });
+
+        // Show Dashboard
+        function showDashboard(dashboardId) {
+            // Check authentication for protected dashboards
+            if ((dashboardId === 'job-seeker-dashboard' && currentUserRole !== 'jobseeker' && currentUserRole !== 'admin') ||
+                (dashboardId === 'employer-dashboard' && currentUserRole !== 'employer' && currentUserRole !== 'admin') ||
+                (dashboardId === 'admin-dashboard' && currentUserRole !== 'admin')) {
+                
+                if (!currentUser) {
+                    authModal.classList.add('active');
+                    switchAuthTab('login');
+                } else {
+                    alert('You do not have permission to access this dashboard.');
+                }
+                return;
+            }
+            
+            // Show target dashboard
+            dashboards.forEach(dashboard => {
+                dashboard.classList.remove('active');
+                if (dashboard.id === dashboardId) {
+                    dashboard.classList.add('active');
+                }
+            });
+            
+            // Load appropriate content
+            if (dashboardId === 'home') {
+                loadHomePage();
+            } else if (dashboardId === 'job-seeker-dashboard') {
+                loadJobSeekerDashboard();
+            } else if (dashboardId === 'employer-dashboard') {
+                loadEmployerDashboard();
+            } else if (dashboardId === 'admin-dashboard') {
+                loadAdminDashboard();
+            }
+        }
 
         // Tab Switching
         tabs.forEach(tab => {
@@ -1240,6 +1651,30 @@
         function loadAdminDashboard() {
             // Admin dashboard content is mostly static in this example
         }
+
+        // Check auth state on page load
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                // Get user role from Firestore
+                db.collection('users').doc(user.uid).get().then((doc) => {
+                    if (doc.exists) {
+                        currentUserRole = doc.data().role;
+                        if (doc.data().name) {
+                            userName.textContent = doc.data().name;
+                            userAvatar.textContent = doc.data().name.charAt(0).toUpperCase();
+                        }
+                        userRole.textContent = currentUserRole === 'admin' ? 'Admin' : 
+                                              currentUserRole === 'employer' ? 'Employer' : 'Job Seeker';
+                    }
+                    updateUIAfterAuth();
+                });
+            } else {
+                currentUser = null;
+                currentUserRole = null;
+                updateUIAfterAuth();
+            }
+        });
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', () => {
